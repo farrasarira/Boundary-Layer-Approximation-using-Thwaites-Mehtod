@@ -1,0 +1,117 @@
+function [sep_u,sep_l,theta,disp_t,H,Cf,vtran] = THWAITES(vtan,X,Y,i_s,nu)
+    numPan = size(X,1);
+    vtan = abs(vtan);
+    theta = zeros(numPan,1);
+    stag_u = i_s;
+    stag_l = i_s-1;
+    m = zeros(numPan,1);
+    l = zeros(numPan,1);
+    H = zeros(numPan,1);
+    disp_t = zeros(numPan,1);
+    vtran = zeros(numPan,1);
+    Cf = zeros(numPan,1);
+
+    
+
+    %% Calculate Theta
+    theta(stag_u) = sqrt(0.075*nu/(vtan(stag_u+1)-vtan(stag_u))*(X(stag_u+1)-X(stag_u)));
+    for i=stag_u+1:numPan
+        int1 = 0;
+        for j=stag_u+1:i
+            int1 = int1 + (vtan(j)^5+vtan(j-1)^5)*abs(X(j)-X(j-1))/2;
+        end
+        theta(i) = sqrt(0.45*nu*int1/vtan(i)^6);
+    end
+
+    theta(stag_l) = sqrt(0.075*nu/(vtan(stag_l-1)-vtan(stag_l))*(X(stag_l-1)-X(stag_l)));
+    for i=stag_l-1:-1:1
+        int1 = 0;
+        for j=stag_l-1:-1:i
+            int1 = int1 + (vtan(j)^5+vtan(j+1)^5) * abs(X(j)-X(j+1))/2;
+        end
+        theta(i) = sqrt(0.45*nu*int1/vtan(i)^6);
+    end
+
+    %% Calculate paramter m
+    for i=stag_u+1:numPan
+        m(i) = 1 * theta(i)^2/nu*(vtan(i)-vtan(i-1))/(X(i)-X(i-1));
+    end
+    for i=stag_l-1:-1:1
+        m(i) = 1 * theta(i)^2/nu*(vtan(i)-vtan(i+1))/(X(i)-X(i+1));
+    end
+   
+    m(stag_u) = 0.075;
+    m(stag_l) = 0.075;
+    figure(15);
+    plot(X,m,'*')
+    %% Calculate l(m), H(m), displacement thickeness, and separation point
+    sep_u = numPan;
+    sep_l = 1;
+    for i=stag_u:numPan
+        if (m(i) >= -0.1) && (m(i) < 0)
+            l(i) = 0.22 + 1.420*m(i)+ 0.018*m(i)/(0.107+m(i));
+            H(i) = 0.0731/(0.14+m(i))+2.088;
+        elseif (m(i) >= 0) && (m(i) <= 0.25)
+            l(i) = 0.22 + 1.57*m(i) - 1.8*m(i)^2;
+            H(i) = 2.61 - 3.75*m(i) + 5.24*m(i)^2;
+        else
+            l(i) = l(i-1);
+            H(i) = H(i-1);
+        end
+        
+        disp_t(i) = H(i)*theta(i);
+        if theta(i) == 0
+            Cf(i) = 0;
+        else
+            Cf(i) = 2*nu/(vtan(i)*theta(i))*l(i);
+        end
+    end
+    
+    for i=stag_l:-1:1
+        if (m(i) >= -0.1) && (m(i) < 0)
+            l(i) = 0.22 + 1.420*m(i)+ 0.018*m(i)/(0.107+m(i));
+            H(i) = 0.0731/(0.14+m(i))+2.088;
+        elseif (m(i) >= 0) && (m(i) <= 0.25)
+            l(i) = 0.22 + 1.57*m(i) - 1.8*m(i)^2;
+            H(i) = 2.61 - 3.75*m(i) + 5.24*m(i)^2;
+        else
+            l(i) = l(i+1);
+            H(i) = H(i+1);
+        end
+        
+        disp_t(i) = H(i)*theta(i);
+        if theta(i) == 0
+            Cf(i) = 0;
+        else
+            Cf(i) = 2*nu/(vtan(i)*theta(i))*l(i);
+        end
+    end
+
+    %% Calculate Transpiration Velocity Vtran
+    vtran(stag_u) = (vtan(stag_u+1)*disp_t(stag_u+1)-vtan(stag_u)*disp_t(stag_u))/(X(stag_u+1)-X(stag_u));
+    vtran(stag_l) = (vtan(stag_l-1)*disp_t(stag_l-1)-vtan(stag_l)*disp_t(stag_l))/(X(stag_l-1)-X(stag_l));
+
+    for i=stag_u+1:numPan
+        vtran(i) = (vtan(i)*disp_t(i)-vtan(i-1)*disp_t(i-1))/(X(i)-X(i-1));
+    end
+    for i=stag_l-1:-1:1
+        vtran(i) = (vtan(i)*disp_t(i)-vtan(i+1)*disp_t(i+1))/(X(i)-X(i+1));
+    end
+
+    %% Determine Separation point
+    %Seperation occurs when H = 0.35
+    for i=stag_u:numPan
+        if(H(i)) >= 3.5
+            sep_u = i;
+            break;
+        end
+    end
+
+    for i=stag_l:-1:1
+        if(H(i)) >= 3.5
+            sep_l = i;
+            break;
+        end
+    end
+end
+
