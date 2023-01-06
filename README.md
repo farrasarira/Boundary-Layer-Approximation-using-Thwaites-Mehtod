@@ -1,2 +1,2 @@
-# Viscous-Inviscid-Interaction-using-Thwaites-Method
+# Boundary-Layer-Approximation-using-Thwaites-Method
 The approximation of boundary layer using Thwaites method is done in this project. The idea to approximate the boundary layer is by dividing the flow into two regimes: inviscid flow and viscous flow. The panel method is used to analyze the inviscid flow, while Thwaites method is used to analyze the viscous flow. The viscous-inviscid interaction method is applied since the displacement of boundary layer affects inviscid flow.
